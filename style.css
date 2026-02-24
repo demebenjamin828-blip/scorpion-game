@@ -1,57 +1,134 @@
-body, html { 
-    margin: 0; padding: 0; overflow: hidden; 
-    background-color: #12050a; font-family: 'Arial', sans-serif; 
-    touch-action: none; 
+const canvas = document.getElementById("canvas");
+const ctx = canvas.getContext("2d");
+const menu = document.getElementById("menu");
+
+canvas.width = window.innerWidth;
+canvas.height = window.innerHeight;
+
+let gameOver = false;
+let gameStarted = false;
+let score = 0;
+let currentSpeed;
+let dirX = 1, dirY = 0;
+let body, segments;
+let particles = [];
+
+// Création de particules pour l'animation de fond
+for(let i=0; i<50; i++) {
+    particles.push({
+        x: Math.random() * canvas.width,
+        y: Math.random() * canvas.height,
+        size: Math.random() * 3,
+        speed: Math.random() * 0.5 + 0.2
+    });
 }
 
-/* Animation du Titre */
-.glow {
-    color: #ff69b4;
-    font-size: 2.5rem;
-    text-transform: uppercase;
-    animation: glow-pulse 2s infinite alternate;
+function drawBackground() {
+    ctx.fillStyle = "#12050a";
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    ctx.fillStyle = "rgba(255, 105, 180, 0.3)";
+    particles.forEach(p => {
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+        ctx.fill();
+        p.y -= p.speed;
+        if(p.y < 0) p.y = canvas.height;
+    });
 }
 
-@keyframes glow-pulse {
-    from { text-shadow: 0 0 5px #ff69b4, 0 0 10px #ff69b4; transform: scale(1); }
-    to { text-shadow: 0 0 20px #ff1493, 0 0 30px #ff1493; transform: scale(1.05); }
+function launchGame(speed) {
+    currentSpeed = speed;
+    body = { x: canvas.width / 2, y: canvas.height / 2 };
+    segments = [];
+    for (let i = 0; i < 20; i++) segments.push({ x: body.x, y: body.y });
+    score = 0; dirX = 1; dirY = 0;
+    gameOver = false;
+    spawnFood();
+    menu.style.display = "none";
+    document.getElementById("controls").style.display = "flex";
+    gameStarted = true;
 }
 
-#menu {
-    position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
-    text-align: center; background: rgba(0, 0, 0, 0.6); 
-    backdrop-filter: blur(8px); color: white; padding: 40px; 
-    border-radius: 30px; border: 2px solid #ff69b4; z-index: 100;
+document.getElementById("btn-lent").onclick = () => launchGame(2.5);
+document.getElementById("btn-moyen").onclick = () => launchGame(4.5);
+document.getElementById("btn-expert").onclick = () => launchGame(7);
+
+let food = null;
+function spawnFood() {
+    food = { x: Math.random()*(canvas.width-60)+30, y: Math.random()*(canvas.height-60)+30 };
 }
 
-.button-group { display: flex; flex-direction: column; gap: 15px; margin-top: 25px; }
-
-.btn { 
-    padding: 15px 30px; cursor: pointer; border: none; border-radius: 50px; 
-    font-weight: bold; font-size: 16px; color: white; transition: 0.3s;
-    box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+function setDir(x, y) {
+    if (!gameStarted || gameOver) return;
+    if ((x !== 0 && dirX === 0) || (y !== 0 && dirY === 0)) {
+        dirX = x; dirY = y;
+    }
 }
 
-.pink-light { background: linear-gradient(to right, #ffb6c1, #ff69b4); }
-.pink-med { background: linear-gradient(to right, #ff69b4, #da70d6); }
-.pink-dark { background: linear-gradient(to right, #c71585, #8b008b); }
+// Contrôles Android
+document.getElementById("up").ontouchstart = (e) => { e.preventDefault(); setDir(0, -1); };
+document.getElementById("down").ontouchstart = (e) => { e.preventDefault(); setDir(0, 1); };
+document.getElementById("left").ontouchstart = (e) => { e.preventDefault(); setDir(-1, 0); };
+document.getElementById("right").ontouchstart = (e) => { e.preventDefault(); setDir(1, 0); };
 
-/* Touches Android en Bas à Droite (Ergonomique) */
-#controls {
-    position: absolute; bottom: 40px; right: 40px; 
-    display: flex; flex-direction: column; align-items: center; z-index: 200;
+// Clavier PC
+document.addEventListener("keydown", (e) => {
+    if (e.key === "ArrowUp" || e.key === "z") setDir(0, -1);
+    if (e.key === "ArrowDown" || e.key === "s") setDir(0, 1);
+    if (e.key === "ArrowLeft" || e.key === "q") setDir(-1, 0);
+    if (e.key === "ArrowRight" || e.key === "d") setDir(1, 0);
+});
+
+function animate() {
+    drawBackground();
+
+    if (gameStarted && !gameOver) {
+        body.x += dirX * currentSpeed;
+        body.y += dirY * currentSpeed;
+
+        for (let i = segments.length - 1; i > 0; i--) {
+            segments[i].x = segments[i - 1].x;
+            segments[i].y = segments[i - 1].y;
+        }
+        segments[0].x = body.x;
+        segments[0].y = body.y;
+
+        if (food) {
+            ctx.beginPath();
+            ctx.arc(food.x, food.y, 12, 0, Math.PI * 2);
+            ctx.fillStyle = "#ff1493";
+            ctx.fill();
+            if (Math.hypot(food.x - body.x, food.y - body.y) < 25) {
+                score++;
+                for(let i=0; i<5; i++) segments.push({x: segments[segments.length-1].x, y: segments[segments.length-1].y});
+                spawnFood();
+            }
+        }
+
+        for (let i = 0; i < segments.length; i++) {
+            ctx.beginPath();
+            ctx.arc(segments[i].x, segments[i].y, 10 * (1 - i/segments.length), 0, Math.PI * 2);
+            ctx.fillStyle = i === 0 ? "#ff69b4" : "#da70d6";
+            ctx.fill();
+        }
+
+        if (body.x < 0 || body.x > canvas.width || body.y < 0 || body.y > canvas.height) gameOver = true;
+    }
+
+    if (gameOver) {
+        ctx.fillStyle = "rgba(0,0,0,0.8)";
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        ctx.fillStyle = "#ff69b4";
+        ctx.textAlign = "center";
+        ctx.font = "bold 30px Arial";
+        ctx.fillText("Bravo ton score est " + score, canvas.width/2, canvas.height/2);
+        ctx.fillStyle = "white";
+        ctx.font = "20px Arial";
+        ctx.fillText("Touche l'écran pour recommencer", canvas.width/2, canvas.height/2 + 60);
+        document.getElementById("controls").style.display = "none";
+        canvas.onclick = () => location.reload();
+    }
+
+    requestAnimationFrame(animate);
 }
-
-.ctrl-row { display: flex; gap: 60px; }
-
-.ctrl-btn {
-    width: 75px; height: 75px; border-radius: 50%; 
-    border: 3px solid rgba(255, 105, 180, 0.6);
-    background: rgba(0, 0, 0, 0.4); color: white; 
-    font-size: 30px; display: flex; align-items: center; justify-content: center;
-    user-select: none; -webkit-tap-highlight-color: transparent;
-}
-
-.ctrl-btn:active { background: #ff69b4; transform: scale(0.9); }
-
-canvas { display: block; }
+animate();
