@@ -2,31 +2,60 @@
 <html lang="fr">
 <head>
     <meta charset="UTF-8">
+
+    <!-- Optimisé mobile Android -->
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Scorpion Game - MICAJA</title>
+
+    <title>MICAJA Game</title>
+
+    <!-- Police élégante -->
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;800&display=swap" rel="stylesheet">
+
     <link rel="stylesheet" href="style.css">
 </head>
+
 <body>
-    <div id="menu">
-        <h1 class="glow">MICAJA GAME</h1>
-        <p>Prête pour l'aventure ?</p>
+
+    <!-- ================= MENU ================= -->
+    <div id="menu" class="screen">
+        <h1 class="title">MICAJA</h1>
+        <p class="subtitle">Prête pour l’aventure ?</p>
+
         <div class="button-group">
-            <button id="btn-lent" class="btn pink-light">NIVEAU DOUX</button>
-            <button id="btn-moyen" class="btn pink-med">NIVEAU PASSION</button>
-            <button id="btn-expert" class="btn pink-dark">NIVEAU INTENSE</button>
+            <button id="btn-lent" class="btn level1">🌸 Niveau Doux</button>
+            <button id="btn-moyen" class="btn level2">💖 Niveau Passion</button>
+            <button id="btn-expert" class="btn level3">🔥 Niveau Intense</button>
         </div>
     </div>
 
-    <div id="controls" style="display:none;">
+
+    <!-- ================= JEU ================= -->
+    <div id="game-container">
+
+        <canvas id="canvas"></canvas>
+
+        <!-- Écran de fin -->
+        <div id="game-over" class="overlay hidden">
+            <h2>Bravo 🎉</h2>
+            <p id="final-score">Ton score est : 0</p>
+            <button id="restart-btn" class="btn restart">Recommencer</button>
+        </div>
+
+    </div>
+
+
+    <!-- ================= CONTRÔLES MOBILE ================= -->
+    <div id="controls" class="mobile-controls hidden">
         <button id="up" class="ctrl-btn">▲</button>
+
         <div class="ctrl-row">
             <button id="left" class="ctrl-btn">◀</button>
+            <button id="down" class="ctrl-btn">▼</button>
             <button id="right" class="ctrl-btn">▶</button>
         </div>
-        <button id="down" class="ctrl-btn">▼</button>
     </div>
 
-    <canvas id="canvas"></canvas>
+
     <script src="script.js"></script>
 </body>
 </html>
