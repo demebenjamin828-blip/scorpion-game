@@ -61,9 +61,9 @@ function launchGame(speed) {
     gameStarted = true;
 }
 
-document.getElementById("btn-lent").onclick = () => launchGame(2);
-document.getElementById("btn-moyen").onclick = () => launchGame(4);
-document.getElementById("btn-expert").onclick = () => launchGame(6);
+document.getElementById("btn-lent").onclick = () => launchGame(1);     // très doux
+document.getElementById("btn-moyen").onclick = () => launchGame(1.8);  // jouable
+document.getElementById("btn-expert").onclick = () => launchGame(2.6); // challenge
 
 /* FOOD */
 let food = null;
@@ -166,3 +166,4 @@ function animate() {
 }
 
 animate();
+
