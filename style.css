@@ -1,134 +1,190 @@
-const canvas = document.getElementById("canvas");
-const ctx = canvas.getContext("2d");
-const menu = document.getElementById("menu");
-
-canvas.width = window.innerWidth;
-canvas.height = window.innerHeight;
-
-let gameOver = false;
-let gameStarted = false;
-let score = 0;
-let currentSpeed;
-let dirX = 1, dirY = 0;
-let body, segments;
-let particles = [];
-
-// Création de particules pour l'animation de fond
-for(let i=0; i<50; i++) {
-    particles.push({
-        x: Math.random() * canvas.width,
-        y: Math.random() * canvas.height,
-        size: Math.random() * 3,
-        speed: Math.random() * 0.5 + 0.2
-    });
+/* ================= RESET ================= */
+*{
+    margin:0;
+    padding:0;
+    box-sizing:border-box;
+    font-family:"Poppins", sans-serif;
 }
 
-function drawBackground() {
-    ctx.fillStyle = "#12050a";
-    ctx.fillRect(0, 0, canvas.width, canvas.height);
-    ctx.fillStyle = "rgba(255, 105, 180, 0.3)";
-    particles.forEach(p => {
-        ctx.beginPath();
-        ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
-        ctx.fill();
-        p.y -= p.speed;
-        if(p.y < 0) p.y = canvas.height;
-    });
+body{
+    overflow:hidden;
+    background:#12050a;
+    color:white;
 }
 
-function launchGame(speed) {
-    currentSpeed = speed;
-    body = { x: canvas.width / 2, y: canvas.height / 2 };
-    segments = [];
-    for (let i = 0; i < 20; i++) segments.push({ x: body.x, y: body.y });
-    score = 0; dirX = 1; dirY = 0;
-    gameOver = false;
-    spawnFood();
-    menu.style.display = "none";
-    document.getElementById("controls").style.display = "flex";
-    gameStarted = true;
+/* ================= CANVAS ================= */
+canvas{
+    position:fixed;
+    top:0;
+    left:0;
+    z-index:0;
 }
 
-document.getElementById("btn-lent").onclick = () => launchGame(2.5);
-document.getElementById("btn-moyen").onclick = () => launchGame(4.5);
-document.getElementById("btn-expert").onclick = () => launchGame(7);
-
-let food = null;
-function spawnFood() {
-    food = { x: Math.random()*(canvas.width-60)+30, y: Math.random()*(canvas.height-60)+30 };
+/* ================= MENU ================= */
+#menu{
+    position:absolute;
+    top:50%;
+    left:50%;
+    transform:translate(-50%, -50%);
+    text-align:center;
+    z-index:2;
+    animation:fadeIn 1.5s ease;
 }
 
-function setDir(x, y) {
-    if (!gameStarted || gameOver) return;
-    if ((x !== 0 && dirX === 0) || (y !== 0 && dirY === 0)) {
-        dirX = x; dirY = y;
-    }
+/* Animation d’apparition */
+@keyframes fadeIn{
+    from{opacity:0; transform:translate(-50%,-60%);}
+    to{opacity:1; transform:translate(-50%,-50%);}
 }
 
-// Contrôles Android
-document.getElementById("up").ontouchstart = (e) => { e.preventDefault(); setDir(0, -1); };
-document.getElementById("down").ontouchstart = (e) => { e.preventDefault(); setDir(0, 1); };
-document.getElementById("left").ontouchstart = (e) => { e.preventDefault(); setDir(-1, 0); };
-document.getElementById("right").ontouchstart = (e) => { e.preventDefault(); setDir(1, 0); };
-
-// Clavier PC
-document.addEventListener("keydown", (e) => {
-    if (e.key === "ArrowUp" || e.key === "z") setDir(0, -1);
-    if (e.key === "ArrowDown" || e.key === "s") setDir(0, 1);
-    if (e.key === "ArrowLeft" || e.key === "q") setDir(-1, 0);
-    if (e.key === "ArrowRight" || e.key === "d") setDir(1, 0);
-});
-
-function animate() {
-    drawBackground();
-
-    if (gameStarted && !gameOver) {
-        body.x += dirX * currentSpeed;
-        body.y += dirY * currentSpeed;
-
-        for (let i = segments.length - 1; i > 0; i--) {
-            segments[i].x = segments[i - 1].x;
-            segments[i].y = segments[i - 1].y;
-        }
-        segments[0].x = body.x;
-        segments[0].y = body.y;
-
-        if (food) {
-            ctx.beginPath();
-            ctx.arc(food.x, food.y, 12, 0, Math.PI * 2);
-            ctx.fillStyle = "#ff1493";
-            ctx.fill();
-            if (Math.hypot(food.x - body.x, food.y - body.y) < 25) {
-                score++;
-                for(let i=0; i<5; i++) segments.push({x: segments[segments.length-1].x, y: segments[segments.length-1].y});
-                spawnFood();
-            }
-        }
-
-        for (let i = 0; i < segments.length; i++) {
-            ctx.beginPath();
-            ctx.arc(segments[i].x, segments[i].y, 10 * (1 - i/segments.length), 0, Math.PI * 2);
-            ctx.fillStyle = i === 0 ? "#ff69b4" : "#da70d6";
-            ctx.fill();
-        }
-
-        if (body.x < 0 || body.x > canvas.width || body.y < 0 || body.y > canvas.height) gameOver = true;
-    }
-
-    if (gameOver) {
-        ctx.fillStyle = "rgba(0,0,0,0.8)";
-        ctx.fillRect(0, 0, canvas.width, canvas.height);
-        ctx.fillStyle = "#ff69b4";
-        ctx.textAlign = "center";
-        ctx.font = "bold 30px Arial";
-        ctx.fillText("Bravo ton score est " + score, canvas.width/2, canvas.height/2);
-        ctx.fillStyle = "white";
-        ctx.font = "20px Arial";
-        ctx.fillText("Touche l'écran pour recommencer", canvas.width/2, canvas.height/2 + 60);
-        document.getElementById("controls").style.display = "none";
-        canvas.onclick = () => location.reload();
-    }
-
-    requestAnimationFrame(animate);
+/* ================= TITRE ================= */
+#menu h1{
+    font-size:3rem;
+    letter-spacing:4px;
+    margin-bottom:10px;
+    background:linear-gradient(45deg,#ff69b4,#ffc0cb,#ff1493);
+    background-size:300% 300%;
+    -webkit-background-clip:text;
+    color:transparent;
+    animation:gradientMove 6s infinite alternate, floatTitle 3s ease-in-out infinite;
 }
-animate();
+
+/* Dégradé animé */
+@keyframes gradientMove{
+    0%{background-position:0% 50%;}
+    100%{background-position:100% 50%;}
+}
+
+/* Léger flottement */
+@keyframes floatTitle{
+    0%,100%{transform:translateY(0);}
+    50%{transform:translateY(-8px);}
+}
+
+#menu p{
+    opacity:0.8;
+    margin-bottom:25px;
+    font-size:1.1rem;
+    animation:softPulse 3s infinite;
+}
+
+/* respiration douce du texte */
+@keyframes softPulse{
+    0%,100%{opacity:0.6;}
+    50%{opacity:1;}
+}
+
+/* ================= BOUTONS ================= */
+.button-group{
+    display:flex;
+    flex-direction:column;
+    gap:15px;
+}
+
+/* Style général */
+.btn{
+    padding:14px 28px;
+    border:none;
+    border-radius:30px;
+    font-size:1rem;
+    cursor:pointer;
+    color:white;
+    letter-spacing:1px;
+    transition:all 0.3s ease;
+    box-shadow:0 0 15px rgba(255,105,180,0.4);
+    position:relative;
+    overflow:hidden;
+}
+
+/* effet brillant qui passe */
+.btn::after{
+    content:"";
+    position:absolute;
+    top:0;
+    left:-100%;
+    width:100%;
+    height:100%;
+    background:linear-gradient(120deg,transparent,rgba(255,255,255,0.4),transparent);
+    transition:0.6s;
+}
+
+.btn:hover::after{
+    left:100%;
+}
+
+/* zoom au survol */
+.btn:hover{
+    transform:scale(1.07);
+    box-shadow:0 0 25px rgba(255,105,180,0.9);
+}
+
+/* Couleurs féminines */
+.pink-light{ background:linear-gradient(45deg,#ffb6c1,#ff69b4); }
+.pink-med{ background:linear-gradient(45deg,#ff69b4,#ff1493); }
+.pink-dark{ background:linear-gradient(45deg,#db7093,#c71585); }
+
+/* ================= CONTRÔLES MOBILE ================= */
+#controls{
+    position:fixed;
+    bottom:25px;
+    left:50%;
+    transform:translateX(-50%);
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    gap:10px;
+    z-index:3;
+}
+
+.ctrl-row{
+    display:flex;
+    gap:10px;
+}
+
+.ctrl-btn{
+    width:65px;
+    height:65px;
+    border-radius:50%;
+    border:none;
+    font-size:22px;
+    color:white;
+    background:rgba(255,105,180,0.25);
+    backdrop-filter:blur(10px);
+    box-shadow:0 0 15px rgba(255,105,180,0.6);
+    transition:0.2s;
+}
+
+/* effet quand on touche */
+.ctrl-btn:active{
+    transform:scale(0.9);
+    background:rgba(255,105,180,0.6);
+}
+
+/* ================= PETITES LUEURS DÉCORATIVES ================= */
+body::before,
+body::after{
+    content:"";
+    position:fixed;
+    width:300px;
+    height:300px;
+    border-radius:50%;
+    background:radial-gradient(circle,rgba(255,105,180,0.25),transparent);
+    z-index:1;
+    animation:glowMove 8s infinite alternate;
+}
+
+body::before{
+    top:-100px;
+    left:-100px;
+}
+
+body::after{
+    bottom:-100px;
+    right:-100px;
+    animation-delay:3s;
+}
+
+@keyframes glowMove{
+    from{transform:scale(1);}
+    to{transform:scale(1.4);}
+}
