@@ -10,7 +10,7 @@ function resizeCanvas(){
     canvas.height = window.innerHeight;
 }
 
-/* ================= VARIABLES JEU ================= */
+/* VARIABLES */
 let gameOver = false;
 let gameStarted = false;
 let score = 0;
@@ -18,15 +18,14 @@ let currentSpeed;
 let dirX = 1, dirY = 0;
 let body, segments, thickness;
 
-/* ================= PARTICULES MENU ================= */
+/* PARTICULES MENU */
 let particles = [];
 for(let i=0;i<60;i++){
     particles.push({
         x: Math.random()*canvas.width,
         y: Math.random()*canvas.height,
         r: Math.random()*3+1,
-        speed: Math.random()*0.4+0.2,
-        alpha: Math.random()*0.5+0.3
+        speed: Math.random()*0.4+0.2
     });
 }
 
@@ -34,21 +33,17 @@ function drawMenuBackground(){
     ctx.fillStyle = "#12050a";
     ctx.fillRect(0,0,canvas.width,canvas.height);
 
+    ctx.fillStyle = "rgba(255,105,180,0.4)";
     particles.forEach(p=>{
         ctx.beginPath();
         ctx.arc(p.x,p.y,p.r,0,Math.PI*2);
-        ctx.fillStyle = `rgba(255,105,180,${p.alpha})`;
         ctx.fill();
-
         p.y -= p.speed;
-        if(p.y < -10){
-            p.y = canvas.height+10;
-            p.x = Math.random()*canvas.width;
-        }
+        if(p.y < 0) p.y = canvas.height;
     });
 }
 
-/* ================= LANCEMENT ================= */
+/* LANCER JEU */
 function launchGame(speed) {
     currentSpeed = speed;
     body = { x: canvas.width / 2, y: canvas.height / 2 };
@@ -70,7 +65,7 @@ document.getElementById("btn-lent").onclick = () => launchGame(2);
 document.getElementById("btn-moyen").onclick = () => launchGame(4);
 document.getElementById("btn-expert").onclick = () => launchGame(6);
 
-/* ================= NOURRITURE ================= */
+/* FOOD */
 let food = null;
 function spawnFood() {
     food = {
@@ -79,7 +74,7 @@ function spawnFood() {
     };
 }
 
-/* ================= DIRECTION ================= */
+/* DIRECTION */
 function setDir(x, y) {
     if (!gameStarted || gameOver) return;
     if ((x !== 0 && dirX === 0) || (y !== 0 && dirY === 0)) {
@@ -87,11 +82,11 @@ function setDir(x, y) {
     }
 }
 
-/* ================= CONTROLES ================= */
-document.getElementById("up").onclick = (e) => { e.preventDefault(); setDir(0, -1); };
-document.getElementById("down").onclick = (e) => { e.preventDefault(); setDir(0, 1); };
-document.getElementById("left").onclick = (e) => { e.preventDefault(); setDir(-1, 0); };
-document.getElementById("right").onclick = (e) => { e.preventDefault(); setDir(1, 0); };
+/* CONTROLES */
+document.getElementById("up").onclick = () => setDir(0, -1);
+document.getElementById("down").onclick = () => setDir(0, 1);
+document.getElementById("left").onclick = () => setDir(-1, 0);
+document.getElementById("right").onclick = () => setDir(1, 0);
 
 document.addEventListener("keydown", (e) => {
     if (e.key === "ArrowUp" || e.key === "z") setDir(0, -1);
@@ -100,17 +95,15 @@ document.addEventListener("keydown", (e) => {
     if (e.key === "ArrowRight" || e.key === "d") setDir(1, 0);
 });
 
-/* ================= BOUCLE PRINCIPALE ================= */
+/* ANIMATION */
 function animate() {
 
-    /* ====== SI MENU → animation douce ====== */
     if(!gameStarted){
         drawMenuBackground();
         requestAnimationFrame(animate);
         return;
     }
 
-    /* ====== GAME OVER ====== */
     if (gameOver) {
         ctx.fillStyle = "rgba(0,0,0,0.85)";
         ctx.fillRect(0, 0, canvas.width, canvas.height);
@@ -129,41 +122,41 @@ function animate() {
         return;
     }
 
-    /* ====== JEU ====== */
     ctx.clearRect(0, 0, canvas.width, canvas.height);
 
     body.x += dirX * currentSpeed;
     body.y += dirY * currentSpeed;
 
     for (let i = segments.length - 1; i > 0; i--) {
-        segments[i].x = segments[i - 1].x;
-        segments[i].y = segments[i - 1].y;
+        segments[i] = {...segments[i-1]};
     }
-    segments[0].x = body.x;
-    segments[0].y = body.y;
+    segments[0] = {...body};
 
-    if (food) {
+    ctx.beginPath();
+    ctx.arc(food.x, food.y, 10, 0, Math.PI * 2);
+    ctx.fillStyle = "#ff1493";
+    ctx.fill();
+
+    if (Math.hypot(food.x - body.x, food.y - body.y) < 20) {
+        score++;
+        for(let i=0;i<5;i++) segments.push({...segments[segments.length-1]});
+        spawnFood();
+    }
+
+    segments.forEach((s,i)=>{
         ctx.beginPath();
-        ctx.arc(food.x, food.y, 10, 0, Math.PI * 2);
-        ctx.fillStyle = "#ff1493";
+        ctx.arc(s.x, s.y, thickness*(1-i/segments.length), 0, Math.PI*2);
+        ctx.fillStyle = i===0 ? "#ff69b4" : "#da70d6";
         ctx.fill();
+    });
 
-        if (Math.hypot(food.x - body.x, food.y - body.y) < 20) {
-            score++;
-            for(let i=0;i<5;i++){
-                segments.push({...segments[segments.length-1]});
-            }
-            spawnFood();
-        }
-    }
+    /* SCORE EN DIRECT */
+    ctx.fillStyle = "rgba(0,0,0,0.35)";
+    ctx.fillRect(20,20,140,40);
 
-    for (let i = 0; i < segments.length; i++) {
-        ctx.beginPath();
-        ctx.arc(segments[i].x, segments[i].y,
-            thickness * (1 - i/segments.length), 0, Math.PI * 2);
-        ctx.fillStyle = i === 0 ? "#ff69b4" : "#da70d6";
-        ctx.fill();
-    }
+    ctx.fillStyle = "white";
+    ctx.font = "bold 18px Poppins";
+    ctx.fillText("Score : " + score, 30,45);
 
     if (body.x < 0 || body.x > canvas.width || body.y < 0 || body.y > canvas.height){
         gameOver = true;
