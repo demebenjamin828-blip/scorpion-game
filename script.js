@@ -5,98 +5,81 @@ const menu = document.getElementById("menu");
 canvas.width = window.innerWidth;
 canvas.height = window.innerHeight;
 
-// Variables de jeu
 let gameOver = false;
 let gameStarted = false;
 let score = 0;
-let baseSpeed, boostSpeed, currentSpeed;
+let currentSpeed;
 let dirX = 1, dirY = 0;
-let body, segments, thickness, size, food;
+let body, segments, thickness;
 
-// --- INITIALISATION ---
-function launchGame(vBase, vBoost) {
-    baseSpeed = vBase;
-    boostSpeed = vBoost;
-    currentSpeed = vBase;
-    
+function launchGame(speed) {
+    currentSpeed = speed;
     body = { x: canvas.width / 2, y: canvas.height / 2 };
     segments = [];
-    for (let i = 0; i < 25; i++) {
-        segments.push({ x: body.x, y: body.y });
-    }
-    
-    thickness = 6;
-    size = 1;
+    for (let i = 0; i < 20; i++) segments.push({ x: body.x, y: body.y });
+    thickness = 8;
     score = 0;
-    dirX = 1; 
-    dirY = 0;
+    dirX = 1; dirY = 0;
     gameOver = false;
-    
     spawnFood();
     menu.style.display = "none";
+    document.getElementById("controls").style.display = "flex";
     gameStarted = true;
     animate(); 
 }
 
-// --- LIENS BOUTONS ---
-document.getElementById("btn-lent").onclick = () => launchGame(1.4, 4.5);
-document.getElementById("btn-moyen").onclick = () => launchGame(2.8, 7.0);
-document.getElementById("btn-expert").onclick = () => launchGame(4.5, 11.0);
+document.getElementById("btn-lent").onclick = () => launchGame(2);
+document.getElementById("btn-moyen").onclick = () => launchGame(4);
+document.getElementById("btn-expert").onclick = () => launchGame(6);
 
+let food = null;
 function spawnFood() {
     food = {
-        x: Math.floor(Math.random() * (canvas.width - 150) + 75),
-        y: Math.floor(Math.random() * (canvas.height - 150) + 75),
-        size: 10
+        x: Math.random() * (canvas.width - 50) + 25,
+        y: Math.random() * (canvas.height - 50) + 25
     };
 }
 
-// --- CONTRÔLES ---
-document.addEventListener("keydown", (e) => {
+function setDir(x, y) {
     if (!gameStarted || gameOver) return;
-    if (["ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight"].includes(e.key)) e.preventDefault();
-
-    const key = e.key;
-
-    if (key === "ArrowLeft" || key === "q" || key === "Q") {
-        if (dirX === -1) currentSpeed = boostSpeed;
-        else if (dirX === 0) { dirX = -1; dirY = 0; currentSpeed = baseSpeed; }
-    } 
-    else if (key === "ArrowRight" || key === "d" || key === "D") {
-        if (dirX === 1) currentSpeed = boostSpeed;
-        else if (dirX === 0) { dirX = 1; dirY = 0; currentSpeed = baseSpeed; }
-    } 
-    else if (key === "ArrowUp" || key === "z" || key === "Z") {
-        if (dirY === -1) currentSpeed = boostSpeed;
-        else if (dirY === 0) { dirX = 0; dirY = -1; currentSpeed = baseSpeed; }
-    } 
-    else if (key === "ArrowDown" || key === "s" || key === "S") {
-        if (dirY === 1) currentSpeed = boostSpeed;
-        else if (dirY === 0) { dirX = 0; dirY = 1; currentSpeed = baseSpeed; }
+    if ((x !== 0 && dirX === 0) || (y !== 0 && dirY === 0)) {
+        dirX = x; dirY = y;
     }
+}
+
+// Événements pour les boutons Android
+document.getElementById("up").onclick = (e) => { e.preventDefault(); setDir(0, -1); };
+document.getElementById("down").onclick = (e) => { e.preventDefault(); setDir(0, 1); };
+document.getElementById("left").onclick = (e) => { e.preventDefault(); setDir(-1, 0); };
+document.getElementById("right").onclick = (e) => { e.preventDefault(); setDir(1, 0); };
+
+// Clavier PC
+document.addEventListener("keydown", (e) => {
+    if (e.key === "ArrowUp" || e.key === "z") setDir(0, -1);
+    if (e.key === "ArrowDown" || e.key === "s") setDir(0, 1);
+    if (e.key === "ArrowLeft" || e.key === "q") setDir(-1, 0);
+    if (e.key === "ArrowRight" || e.key === "d") setDir(1, 0);
 });
 
-document.addEventListener("keyup", () => {
-    currentSpeed = baseSpeed;
-});
-
-// --- BOUCLE D'ANIMATION ---
 function animate() {
     if (gameOver) {
         ctx.fillStyle = "rgba(0,0,0,0.85)";
         ctx.fillRect(0, 0, canvas.width, canvas.height);
-        ctx.fillStyle = "#4ade80";
+        ctx.fillStyle = "#ff69b4";
         ctx.textAlign = "center";
-        ctx.font = "bold 40px Arial";
-        ctx.fillText("SCORE FINAL : " + score, canvas.width/2, canvas.height/2);
+        ctx.font = "bold 25px Arial";
+        // Message spécial demandé
+        ctx.fillText("Bravo ton score est " + score, canvas.width/2, canvas.height/2);
         ctx.fillStyle = "white";
-        ctx.font = "20px Arial";
-        ctx.fillText("F5 pour changer de niveau", canvas.width/2, canvas.height/2 + 60);
+        ctx.font = "18px Arial";
+        ctx.fillText("Appuyer pour recommencer", canvas.width/2, canvas.height/2 + 50);
+        
+        document.getElementById("controls").style.display = "none";
+        canvas.onclick = () => location.reload(); 
         return; 
     }
 
     ctx.clearRect(0, 0, canvas.width, canvas.height);
-
     body.x += dirX * currentSpeed;
     body.y += dirY * currentSpeed;
 
@@ -109,38 +92,23 @@ function animate() {
 
     if (food) {
         ctx.beginPath();
-        ctx.arc(food.x, food.y, food.size, 0, Math.PI * 2);
-        ctx.fillStyle = "#facc15";
+        ctx.arc(food.x, food.y, 10, 0, Math.PI * 2);
+        ctx.fillStyle = "#ff1493";
         ctx.fill();
-
-        if (Math.hypot(food.x - body.x, food.y - body.y) < 20 * size) {
+        if (Math.hypot(food.x - body.x, food.y - body.y) < 20) {
             score++;
-            size += 0.05;
-            thickness += 0.15;
-            for(let i=0; i<3; i++) segments.push({x: segments[segments.length-1].x, y: segments[segments.length-1].y});
-            food = null;
-            setTimeout(spawnFood, 400);
+            for(let i=0; i<5; i++) segments.push({x: segments[segments.length-1].x, y: segments[segments.length-1].y});
+            spawnFood();
         }
     }
 
-    for (let i = segments.length - 1; i >= 0; i--) {
+    for (let i = 0; i < segments.length; i++) {
         ctx.beginPath();
-        let currentT = thickness * (1 - i / (segments.length * 1.5));
-        ctx.arc(segments[i].x, segments[i].y, currentT, 0, Math.PI * 2);
-        ctx.fillStyle = "#16a34a";
+        ctx.arc(segments[i].x, segments[i].y, thickness * (1 - i/segments.length), 0, Math.PI * 2);
+        ctx.fillStyle = i === 0 ? "#ff69b4" : "#da70d6";
         ctx.fill();
     }
 
-    ctx.beginPath();
-    ctx.arc(body.x, body.y, 8 * size, 0, Math.PI * 2);
-    ctx.fillStyle = "#4ade80";
-    ctx.fill();
-
-    ctx.fillStyle = "white";
-    ctx.font = "bold 24px Arial";
-    ctx.fillText("Score: " + score, 30, 50);
-
     if (body.x < 0 || body.x > canvas.width || body.y < 0 || body.y > canvas.height) gameOver = true;
-
     requestAnimationFrame(animate);
 }
